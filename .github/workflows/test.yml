@@ -33,3 +33,9 @@ jobs:
       - run: |
           npm install
           npm test
+
+  test:
+    runs-on: self-hosted
+    steps:
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3

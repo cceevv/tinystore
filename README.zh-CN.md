@@ -1,8 +1,7 @@
 <div align="center">
 <h1>tinystore</h1>
 
-Tiny state manager based on React Hooks, with automatic performance
-optimization.
+基于React Hooks的超轻量状态管理器，性能自动优化。
 
 [![npm](https://img.shields.io/npm/v/tinystore?style=flat-square)](https://www.npmjs.com/package/tinystore)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/cceevv/tinystore/test.yml?branch=master&style=flat-square)](https://github.com/cceevv/tinystore/actions/workflows/test.yml)
@@ -11,18 +10,18 @@ optimization.
 [![npm type definitions](https://img.shields.io/npm/types/typescript?style=flat-square)](https://github.com/cceevv/tinystore/blob/master/src/index.ts)
 [![GitHub](https://img.shields.io/github/license/cceevv/tinystore?style=flat-square)](https://github.com/cceevv/tinystore/blob/master/LICENSE)
 
-English · [简体中文](./README.zh-CN.md)
+[English](./README.md) · 简体中文
 
 </div>
 
 ---
 
-## Features
+## 特性
 
-- Amazing re-render auto-optimization
-- Extremely simple API
+- 惊人的re-render自动优化
+- 极其简单的API
 
-## Install
+## 安装
 
 ```sh
 pnpm add tinystore
@@ -32,9 +31,9 @@ yarn add tinystore
 npm i tinystore
 ```
 
-## Usage
+## 使用
 
-### 1. State definition
+### 1. State定义
 
 ```ts
 class UserState {
@@ -43,7 +42,7 @@ class UserState {
 }
 ```
 
-### 2. Action definition
+### 2. Action定义
 
 ```ts
 import type { Getter, Setter } from "tinystore";
@@ -74,7 +73,7 @@ class UserAction {
 }
 ```
 
-### 3. tinyStore initialization
+### 3. tinyStore创建
 
 ```ts
 import tinyStore from "tinyStore";
@@ -82,7 +81,7 @@ import tinyStore from "tinyStore";
 const userStore = tinyStore(UserState, UserAction);
 ```
 
-### 4. Access state and actions in components
+### 4. 在组件中访问state和actions
 
 ```tsx
 const Demo = () => {
