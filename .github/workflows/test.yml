@@ -34,8 +34,19 @@ jobs:
           npm install
           npm test
 
-  test:
-    runs-on: self-hosted
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.github_token }}
+          flag-name: run-${{ matrix.test_number }}
+          parallel: true
+
+  finish:
+    needs: build
+    runs-on: ubuntu-latest
     steps:
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
+      - name: Coveralls Finished
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.github_token }}
+          parallel-finished: true
