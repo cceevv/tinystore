@@ -4,7 +4,7 @@
 Tiny state manager based on React Hooks, with automatic performance
 optimization.
 
-[![npm](https://img.shields.io/npm/v/tinystore?style=flat-square)](https://www.npmjs.com/package/tinystore)
+[![npm](https://img.shields.io/npm/v/@cceevv/tinystore?style=flat-square)](https://www.npmjs.com/package/@cceevv/tinystore)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/cceevv/tinystore/test.yml?branch=master&style=flat-square)](https://github.com/cceevv/tinystore/actions/workflows/test.yml)
 [![Codecov](https://img.shields.io/codecov/c/github/cceevv/tinystore?style=flat-square)](https://codecov.io/gh/cceevv/tinystore)
 [![npm bundle size](https://img.shields.io/bundlephobia/minzip/tinystore?style=flat-square)](https://bundlephobia.com/result?p=tinystore)
@@ -25,11 +25,11 @@ English · [简体中文](./README.zh-CN.md)
 ## Install
 
 ```sh
-pnpm add tinystore
+pnpm add @cceevv/tinystore
 # or
-yarn add tinystore
+yarn add @cceevv/tinystore
 # or
-npm i tinystore
+npm i @cceevv/tinystore
 ```
 
 ## Usage
