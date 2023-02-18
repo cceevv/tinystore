@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, useEffect } from 'react'
 import '@testing-library/jest-dom';
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import tinyStore, { Getter, Setter } from './index';
@@ -8,6 +8,10 @@ test('tinyStore', async () => {
   class UserState {
     name = ''
     age = 0
+
+    noFuncInState() {
+      console.log('xxx')
+    }
   }
 
   class UserAction {
@@ -22,6 +26,8 @@ test('tinyStore', async () => {
         age: 1,
       })
     }
+
+    public noPublicStateInAction = 'noPublicStateInAction'
 
     private readonly names = ['Aaron', 'Petter', 'Charles']
     private randomIdx = 0
@@ -42,8 +48,18 @@ test('tinyStore', async () => {
   const userStore = tinyStore(UserState, UserAction)
 
   const Demo: FC = () => {
-    const { name, age } = userStore.useStore()
     const { incAge, randomName } = userStore.actions()
+    const store = userStore.useStore()
+    const { name, age, noFuncInState } = userStore.useStore()
+
+    useEffect(() => {
+      // @ts-ignore
+      expect(() => (store.ccc = 'ccc')).toThrow()
+    }, [store])
+
+    useEffect(() => {
+      expect(noFuncInState).toBeUndefined();
+    }, [noFuncInState])
 
     return (
       <>
@@ -64,6 +80,12 @@ test('tinyStore', async () => {
   // @ts-ignore
   expect(() => tinyStore(1234, 'sss')).toThrow();
 
+  // @ts-ignore
+  expect(() => (userStore.getStore().aaa = 111)).toThrow();
+  expect(() => userStore.getStore().noFuncInState()).toThrow();
+  // @ts-ignore
+  expect(() => (userStore.actions().bbb = 222)).toThrow();
+  expect(userStore.actions().noPublicStateInAction).toBeUndefined();
 
   const { getByText } = render(<Demo />);
 
