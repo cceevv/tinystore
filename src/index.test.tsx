@@ -1,5 +1,4 @@
 import { FC } from 'react'
-import { expect, test } from 'vitest';
 import '@testing-library/jest-dom';
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import tinyStore, { Getter, Setter } from './index';
