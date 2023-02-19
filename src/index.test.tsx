@@ -39,7 +39,7 @@ test('tinyStore', async () => {
 
     // async example
     async randomName() {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 10));
       this.set({ name: this.names[this.randomIdx++ % this.names.length] })
     }
 
