@@ -5,26 +5,29 @@ import tinyStore, { Getter, Setter } from './index';
 
 test('tinyStore', async () => {
 
-  class UserState {
-    name = ''
-    age = 0
+  interface Point { x: number, y: number }
+
+  class DemoState {
+    label = ''
+    num = 0
+    point: Point = {
+      x: 0,
+      y: 0,
+    }
 
     noFuncInState() {
       console.log('xxx')
     }
   }
 
-  class UserAction {
+  class DemoAction {
     // init action
     constructor(
       // Constructor Shorthand
-      private get: Getter<UserState>,
-      private set: Setter<UserState>,
+      private get: Getter<DemoState>,
+      private set: Setter<DemoState>,
     ) {
-      set({
-        name: 'Anonymous',
-        age: 1,
-      })
+      set({ label: 'Hello Kitty.' })
     }
 
     public noPublicStateInAction = 'noPublicStateInAction'
@@ -32,25 +35,28 @@ test('tinyStore', async () => {
     private readonly names = ['Aaron', 'Petter', 'Charles']
     private randomIdx = 0
 
-    incAge() {
-      const { age } = this.get()
-      this.set({ age: age + 1 })
+    inc() {
+      const { num } = this.get()
+      this.set({ num: num + 1 })
+    }
+
+    setPoint(x: number, y: number) {
+      this.set({ point: { x, y } })
     }
 
     // async example
     async randomName() {
       await new Promise(resolve => setTimeout(resolve, 10));
-      this.set({ name: this.names[this.randomIdx++ % this.names.length] })
+      this.set({ label: this.names[this.randomIdx++ % this.names.length] })
     }
-
   }
 
-  const userStore = tinyStore(UserState, UserAction)
+  const demoStore = tinyStore(DemoState, DemoAction)
 
   const Demo: FC = () => {
-    const { incAge, randomName } = userStore.actions()
-    const store = userStore.useStore()
-    const { name, age, noFuncInState } = userStore.useStore()
+    const { inc, setPoint, randomName } = demoStore.actions()
+    const { label, num, point, noFuncInState } = demoStore.useStore()
+    const store = demoStore.useStore()
 
     useEffect(() => {
       // @ts-ignore
@@ -63,9 +69,13 @@ test('tinyStore', async () => {
 
     return (
       <>
-        <p><label>name:</label><span>{name}</span></p>
-        <p><label>age:</label><span>{age}</span></p>
-        <button onClick={incAge}>incAge</button>
+        <p><label>num:</label><span>{num}</span></p>
+        <button onClick={inc}>inc</button>
+
+        <p><label>point:</label><span>[{point.x}, {point.y}]</span></p>
+        <button onClick={() => setPoint(111, 222)}>setPoint</button>
+
+        <p><label>label:</label><span>{label}</span></p>
         <button onClick={randomName}>randomName</button>
       </>
     );
@@ -74,27 +84,30 @@ test('tinyStore', async () => {
   // @ts-ignore
   expect(() => tinyStore()).toThrow();
   // @ts-ignore
-  expect(() => tinyStore(UserState)).toThrow();
+  expect(() => tinyStore(DemoState)).toThrow();
   // @ts-ignore
   expect(() => tinyStore({}, {})).toThrow();
   // @ts-ignore
   expect(() => tinyStore(1234, 'sss')).toThrow();
 
   // @ts-ignore
-  expect(() => (userStore.getStore().aaa = 111)).toThrow();
-  expect(() => userStore.getStore().noFuncInState()).toThrow();
+  expect(() => (demoStore.getStore().aaa = 111)).toThrow();
+  expect(() => demoStore.getStore().noFuncInState()).toThrow();
   // @ts-ignore
-  expect(() => (userStore.actions().bbb = 222)).toThrow();
-  expect(userStore.actions().noPublicStateInAction).toBeUndefined();
+  expect(() => (demoStore.actions().bbb = 222)).toThrow();
+  expect(demoStore.actions().noPublicStateInAction).toBeUndefined();
 
   const { getByText } = render(<Demo />);
 
-  fireEvent.click(getByText('incAge'));
+  fireEvent.click(getByText('inc'));
+  expect(getByText('1')).toBeInTheDocument();
+
+  fireEvent.click(getByText('inc'));
   expect(getByText('2')).toBeInTheDocument();
 
-  fireEvent.click(getByText('incAge'));
-  expect(getByText('3')).toBeInTheDocument();
-
+  expect(getByText('[0, 0]')).toBeInTheDocument();
+  fireEvent.click(getByText('setPoint'));
+  expect(getByText('[111, 222]')).toBeInTheDocument();
 
   fireEvent.click(getByText('randomName'));
   await waitFor(() => {
