@@ -21,7 +21,7 @@ test('tinyStore', async () => {
   }
 
   class DemoAction {
-    // init action
+
     constructor(
       // Constructor Shorthand
       private get: Getter<DemoState>,
