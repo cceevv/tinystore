@@ -3,14 +3,14 @@ import equal from 'fast-deep-equal/es6/react'
 import clone from 'clone'
 
 interface TinyStore<S, A> {
-  useStore: () => S
-  getStore: () => S
+  useStore: (source?: boolean) => S
+  getStore: (source?: boolean) => S
   actions: () => A
 }
 
 type Updater<S> = (data: Partial<S>) => void
 
-export type Getter<S> = () => S
+export type Getter<S> = (source?: boolean) => S
 export type Setter<S> = (data: Partial<S>) => void
 
 export default function tinyStore<S extends {}, A>(
@@ -19,44 +19,29 @@ export default function tinyStore<S extends {}, A>(
 ): TinyStore<S, A> {
   const hooks: Updater<S>[] = []
   const store = new StateClass()
+  let cache: S = freeze(clone(store))
 
-  const storeProxy: S = new Proxy({}, {
-    get: (_, key: string) => {
-      const val = store[key as keyof S]
-      if (typeof val === 'function') {
-        return undefined
-      }
-      return clone(val)
-    },
-    set: (_, key: string, _val: any) => {
-      console.error(`[Forbidden] Try to set [${key}] of`, store, 'from get() or getStore().')
-      throw new Error(`State can only be update with set() in Action.`)
-    },
-  }) as S
-
-  const get: Getter<S> = () => (storeProxy as S)
+  const get: Getter<S> = (source = false) => source ? store : cache
   const set: Setter<S> = (data: Partial<S>) => {
     const state = clone(data)
     Object.assign(store, state)
+    if (equal(cache, store)) return;
+    cache = freeze(clone(store))
     hooks.forEach(updater => updater(state))
   }
   const action = new ActionClass(get, set)
 
-  const actionProxy = new Proxy({}, {
-    get: (_, key: string) => {
-      const val = action[key as keyof A]
-      if (typeof val === 'function') {
-        return val.bind(action)
-      }
-      return undefined
-    },
-    set: (_, key: string, _val: any) => {
-      console.error(`[Forbidden] Try to set [${key}] function of`, action, 'from actions().')
-      throw new Error(`You should never change action functions dynamically.`)
-    },
+  const actionMap: any = {}
+  Reflect.ownKeys(ActionClass.prototype).forEach(key => {
+    if (key === 'constructor') return;
+    const val = action[key as keyof A]
+    if (typeof val === 'function') {
+      actionMap[key] = val.bind(action)
+    }
   })
+  Object.freeze(actionMap)
 
-  const useStore = () => {
+  const useStore = (source: boolean) => {
     const [, setState] = useState({})
     const stateProxy = useRef<Partial<S>>({})
     const stateCache = useRef<Partial<S>>({})
@@ -64,9 +49,9 @@ export default function tinyStore<S extends {}, A>(
     useMemo(() => {
       stateProxy.current = new Proxy({}, {
         get: (_, key: string) => {
-          const val = storeProxy[key as keyof S]
+          const val = cache[key as keyof S]
           stateCache.current[key as keyof S] = val
-          return val
+          return source ? store[key as keyof S] : val
         },
         set: (_, key: string, _val: any) => {
           console.error(`[Forbidden] Try to set [${key}] of`, store, 'from useStore().')
@@ -93,8 +78,18 @@ export default function tinyStore<S extends {}, A>(
   }
 
   return {
-    useStore: () => (useStore() as S),
-    getStore: () => (storeProxy as S),
-    actions: () => (actionProxy as A),
+    useStore: (source = false) => (useStore(source) as S),
+    getStore: (source = false) => source ? store : cache,
+    actions: () => (actionMap as A),
   };
+}
+
+function freeze<T>(obj: T): T {
+  Object.freeze(obj)
+  if (obj instanceof Array) {
+    obj.forEach(freeze)
+  } else if (typeof obj === 'object') {
+    for (let key in obj) freeze(obj[key])
+  }
+  return obj
 }

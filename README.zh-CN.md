@@ -20,7 +20,7 @@
 
 - 惊人的re-render自动优化
 - 极其简单的API
-- 仅100行源代码
+- 不到100行源代码
 
 ## 安装
 
@@ -39,19 +39,18 @@ npm i @cceevv/tinystore
 `State`是一个不含方法的简单类，主要用于定义数据类型和结构。
 
 ```ts
-interface Point { x: number, y: number }
+interface Point {
+  x: number;
+  y: number;
+}
 
 class DemoState {
-  label = ''
-  num = 0
+  label = "";
+  num = 0;
   point: Point = {
     x: 0,
     y: 0,
-  }
-
-  noFuncInState() {
-    console.log('xxx')
-  }
+  };
 }
 ```
 
@@ -60,32 +59,31 @@ class DemoState {
 `Action`是一个包含一系列用于改变状态的方法的类，状态只能在`Action`中被改变。
 
 ```ts
-import type { Getter, Setter } from "@cceevv/tinystore";  
+import type { Getter, Setter } from "@cceevv/tinystore";
 
 class DemoAction {
-
   constructor(
     // Constructor Shorthand
     private get: Getter<DemoState>,
     private set: Setter<DemoState>,
   ) {
-    set({ label: 'Hello Kitty.' })
+    set({ label: "Hello Kitty." });
   }
 
   inc() {
-    const { num } = this.get()
-    this.set({ num: num + 1 })
+    const { num } = this.get();
+    this.set({ num: num + 1 });
   }
 
   setPoint(x: number, y: number) {
-    this.set({ point: { x, y } })
+    this.set({ point: { x, y } });
   }
 
-  private readonly names = ['Aaron', 'Petter', 'Charles']
+  private readonly names = ["Aaron", "Petter", "Charles"];
 
   // async example
   async randomName() {
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
     this.set({ label: this.names[Math.random() * this.names.length | 0] });
   }
 }
@@ -104,21 +102,30 @@ export default tinyStore(DemoState, DemoAction);
 ### 4. 在组件中访问state和actions
 
 ```tsx
-import store from 'path/to/store'
+import store from "path/to/store";
 
 const Demo = () => {
-  const { label, num, point } = store.useStore()
-  const { inc, setPoint, randomName } = store.actions()
+  const { label, num, point } = store.useStore();
+  const { inc, setPoint, randomName } = store.actions();
 
   return (
     <>
-      <p><label>num:</label><span>{num}</span></p>
+      <p>
+        <label>num:</label>
+        <span>{num}</span>
+      </p>
       <button onClick={inc}>inc</button>
 
-      <p><label>point:</label><span>[{point.x}, {point.y}]</span></p>
+      <p>
+        <label>point:</label>
+        <span>[{point.x}, {point.y}]</span>
+      </p>
       <button onClick={() => setPoint(111, 222)}>setPoint</button>
 
-      <p><label>label:</label><span>{label}</span></p>
+      <p>
+        <label>label:</label>
+        <span>{label}</span>
+      </p>
       <button onClick={randomName}>randomName</button>
     </>
   );
@@ -127,26 +134,31 @@ const Demo = () => {
 
 ## API
 
-### `tinyStore(StateClass, ActionClass)`
-  * `StateClass`: 一个不含方法的简单类，主要用于定义数据类型和结构。
-  * `ActionClass`: 一个包含一系列用于改变状态的方法的类。
-  * returns: `{useStore, getStore, actions}` 详见下文解释。
-  
-> `StateClass`和`ActionClass`会被自动初始化，并在`ActionClass`的构造函数中注入`get`和`set`方法用于读写`State`，`State`只能通过`set()`方法在`Action`中被修改。
+### **tinyStore(StateClass, ActionClass)**
 
-### `useStore()`
+- `StateClass`: 一个不含方法的简单类，主要用于定义数据类型和结构。
+- `ActionClass`: 一个包含一系列用于改变状态的方法的类。
+- returns: `{useStore, getStore, actions}` 详见下文解释。
 
-  这是一个 React Hook，返回所有的状态，但只有在组件中使用的状态才会触发React渲染。
+`` `StateClass`和`ActionClass`会被自动初始化，并在`ActionClass`的构造函数中注入`get`和`set`方法用于读写`State`，`State`只能通过`set()`方法在`Action`中被修改。 ``
 
-### `getStore()`
+### **useStore()**
 
-  返回所有的状态，和`useStore()`的区别是，`getStore()`可以在任何地方被调用，而不仅仅在React组件中。
+这是一个 React Hook，返回所有的状态，但只有在组件中使用的状态才会触发React渲染。
 
-### `actions()`
+``注意：返回值是只读的，不可修改。如果传入参数`true`则返回源数据，可被修改，一般情况下不推荐！``
 
-  返回所有用于改变`State`的方法，支持异步方法。
+### **getStore()**
 
-> `get()`, `useStore()`, `getStore()`, `actions()`的返回值都是只读的，尝试写入数据会抛出异常！
+返回所有的状态，和`useStore()`的区别是，`getStore()`可以在任何地方被调用，而不仅仅在React组件中。
+
+``注意：返回值是只读的，不可修改。如果传入参数`true`则返回源数据，可被修改，一般情况下不推荐！``
+
+### **actions()**
+
+返回所有用于改变`State`的方法，支持异步方法。
+
+`` `get()`,`useStore()`,`getStore()`,`actions()`的返回值都是只读的，不能被修改！ ``
 
 ## License
 

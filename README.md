@@ -21,7 +21,7 @@ English · [简体中文](./README.zh-CN.md)
 
 - Amazing re-render auto-optimization
 - Extremely simple API
-- Only 100 lines of source code
+- Less than 100 lines of source code
 
 ## Install
 
@@ -37,56 +37,56 @@ npm i @cceevv/tinystore
 
 ### 1. State definition
 
-`State` is a simple class with no methods, mainly used to define data types and structures.
+`State` is a simple class with no methods, mainly used to define data types and
+structures.
 
 ```ts
-interface Point { x: number, y: number }
+interface Point {
+  x: number;
+  y: number;
+}
 
 class DemoState {
-  label = ''
-  num = 0
+  label = "";
+  num = 0;
   point: Point = {
     x: 0,
     y: 0,
-  }
-
-  noFuncInState() {
-    console.log('xxx')
-  }
+  };
 }
 ```
 
 ### 2. Action definition
 
-`Action` is a class that contains a series of methods for changing the `State`, and the state can only be changed in `Action`.
+`Action` is a class that contains a series of methods for changing the `State`,
+and the state can only be changed in `Action`.
 
 ```ts
-import type { Getter, Setter } from "@cceevv/tinystore";  
+import type { Getter, Setter } from "@cceevv/tinystore";
 
 class DemoAction {
-
   constructor(
     // Constructor Shorthand
     private get: Getter<DemoState>,
     private set: Setter<DemoState>,
   ) {
-    set({ label: 'Hello Kitty.' })
+    set({ label: "Hello Kitty." });
   }
 
   inc() {
-    const { num } = this.get()
-    this.set({ num: num + 1 })
+    const { num } = this.get();
+    this.set({ num: num + 1 });
   }
 
   setPoint(x: number, y: number) {
-    this.set({ point: { x, y } })
+    this.set({ point: { x, y } });
   }
 
-  private readonly names = ['Aaron', 'Petter', 'Charles']
+  private readonly names = ["Aaron", "Petter", "Charles"];
 
   // async example
   async randomName() {
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
     this.set({ label: this.names[Math.random() * this.names.length | 0] });
   }
 }
@@ -105,21 +105,30 @@ export default tinyStore(DemoState, DemoAction);
 ### 4. Access state and actions in components
 
 ```tsx
-import store from 'path/to/store'
+import store from "path/to/store";
 
 const Demo = () => {
-  const { label, num, point } = store.useStore()
-  const { inc, setPoint, randomName } = store.actions()
+  const { label, num, point } = store.useStore();
+  const { inc, setPoint, randomName } = store.actions();
 
   return (
     <>
-      <p><label>num:</label><span>{num}</span></p>
+      <p>
+        <label>num:</label>
+        <span>{num}</span>
+      </p>
       <button onClick={inc}>inc</button>
 
-      <p><label>point:</label><span>[{point.x}, {point.y}]</span></p>
+      <p>
+        <label>point:</label>
+        <span>[{point.x}, {point.y}]</span>
+      </p>
       <button onClick={() => setPoint(111, 222)}>setPoint</button>
 
-      <p><label>label:</label><span>{label}</span></p>
+      <p>
+        <label>label:</label>
+        <span>{label}</span>
+      </p>
       <button onClick={randomName}>randomName</button>
     </>
   );
@@ -128,26 +137,36 @@ const Demo = () => {
 
 ## API
 
-### `tinyStore(StateClass, ActionClass)`
-  * `StateClass`: A simple class without methods, mainly used to define data types and structures.
-  * `ActionClass`: A class that contains a set of methods for changing the `State`.
-  * returns: `{useStore, getStore, actions}` See the explanation below for details.
-  
-> `StateClass` and `ActionClass` will be automatically initialized, and `get` and `set` methods will be injected into the constructor of `ActionClass` to read and write `State`, `State` can only be modified in `Action` through `set()` method.
+### **tinyStore(StateClass, ActionClass)**
 
-### `useStore()`
+- `StateClass`: A simple class without methods, mainly used to define data types
+  and structures.
+- `ActionClass`: A class that contains a set of methods for changing the
+  `State`.
+- returns: `{useStore, getStore, actions}` See the explanation below for
+  details.
 
-  This is a React Hook that returns all state, but only the state that is used in the component will trigger a React render.
+`` `StateClass` and `ActionClass` will be automatically initialized, and `get` and `set` methods will be injected into the constructor of `ActionClass` to read and write `State`, `State` can only be modified in `Action` through `set()` method. ``
 
-### `getStore()`
+### **useStore()**
 
-  Returns all state. The difference from `useStore()` is that `getStore()` can be called anywhere, not just in React components.
+This is a React Hook that returns all state, but only the state that is used in
+the component will trigger a React render.
 
-### `actions()`
+``Note: The return value is read-only and cannot be modified. If the parameter `true` is passed in, the source data will be returned, which can be modified, and it is generally not recommended!``
 
-  Returns all methods used to change `State`, supports asynchronous methods.
+### **getStore()**
 
-> The return values of `get()`, `useStore()`, `getStore()`, `actions()` are all read-only, trying to write data will throw an exception!
+Returns all state. The difference from `useStore()` is that `getStore()` can be
+called anywhere, not just in React components.
+
+``Note: The return value is read-only and cannot be modified. If the parameter `true` is passed in, the source data will be returned, which can be modified, and it is generally not recommended!``
+
+### **actions()**
+
+Returns all methods used to change `State`, supports asynchronous methods.
+
+``The return values of `get()`, `useStore()`, `getStore()`, `actions()` are all read-only, which means it cannot be modified!``
 
 ## License
 
