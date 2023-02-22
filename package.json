@@ -1,6 +1,6 @@
 {
   "name": "@cceevv/tinystore",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Tiny state manager based on React Hooks, with automatic performance optimization.",
   "keywords": [
     "react",
