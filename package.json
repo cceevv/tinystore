@@ -25,7 +25,8 @@
   ],
   "scripts": {
     "test": "jest --env=jsdom --preset=ts-jest --coverage --coverageProvider=babel",
-    "build": "rm -rf dist coverage && rollup -c --configPlugin @rollup/plugin-typescript"
+    "prebuild": "rm -rf dist coverage",
+    "build": "rollup -c --configPlugin @rollup/plugin-typescript"
   },
   "peerDependencies": {
     "react": ">=16.8.0"
