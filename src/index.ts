@@ -43,8 +43,24 @@ export default function tinyStore<S extends {}, A>(
 
   const useStore = (source: boolean) => {
     const [, setState] = useState({})
+    const updaterRef = useRef<Updater<S>>()
     const stateProxy = useRef<Partial<S>>({})
     const stateCache = useRef<Partial<S>>({})
+
+    if (!updaterRef.current) {
+      updaterRef.current = (data: Partial<S>) => {
+        for (let key in data) {
+          if (key in stateCache.current && !equal(data[key], stateCache.current[key])) {
+            setState({}); break;
+          }
+        }
+      }
+      hooks.push(updaterRef.current)
+    }
+
+    useEffect(() => () => {
+      updaterRef.current && hooks.splice(hooks.indexOf(updaterRef.current), 1)
+    }, [])
 
     useMemo(() => {
       stateProxy.current = new Proxy({}, {
@@ -58,20 +74,6 @@ export default function tinyStore<S extends {}, A>(
           throw new Error(`State can only be update with set() in Action.`)
         },
       })
-    }, [])
-
-    useEffect(() => {
-      const updater: Updater<S> = (data: Partial<S>) => {
-        for (let key in data) {
-          if (key in stateCache.current && !equal(data[key], stateCache.current[key])) {
-            setState({}); break;
-          }
-        }
-      }
-      hooks.push(updater)
-      return () => {
-        hooks.splice(hooks.indexOf(updater), 1)
-      }
     }, [])
 
     return stateProxy.current
