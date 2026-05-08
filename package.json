@@ -50,10 +50,6 @@
   "peerDependencies": {
     "react": ">=18.0.0"
   },
-  "optionalDependencies": {
-    "@rolldown/binding-darwin-arm64": "1.0.0",
-    "@rolldown/binding-linux-x64-gnu": "1.0.0"
-  },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
