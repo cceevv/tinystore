@@ -12,33 +12,38 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   test:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
-
     strategy:
       matrix:
-        node-version: [16.x]
-        
-    # Steps represent a sequence of tasks that will be executed as part of the job
+        node-version: [18.x, 20.x]
+        os: [ubuntu-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-      - run: |
-          npm install
-          npm test
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm run typecheck
+      - run: pnpm run build
+      - run: pnpm test
 
       - name: Coveralls Parallel
+        if: matrix.os == 'ubuntu-latest'
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.github_token }}
-          flag-name: run-${{ matrix.test_number }}
+          flag-name: run-${{ matrix.os }}-${{ matrix.node-version }}
           parallel: true
 
   finish:

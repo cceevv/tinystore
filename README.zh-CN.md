@@ -1,7 +1,8 @@
 <div align="center">
 <h1>tinystore</h1>
 
-基于React Hooks的超轻量状态管理器，性能自动优化。
+一个面向 React 的极简状态管理库，强调显式 action、只读 state 快照和
+selector 订阅。
 
 [![npm](https://img.shields.io/npm/v/@cceevv/tinystore?style=flat-square)](https://www.npmjs.com/package/@cceevv/tinystore)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/cceevv/tinystore/test.yml?branch=master&style=flat-square&label=CI&logo=github)](https://github.com/cceevv/tinystore/actions/workflows/test.yml)
@@ -16,11 +17,25 @@
 
 ---
 
+## 为什么是 tinystore
+
+`tinystore` 面向希望保持 API 很小、状态变更边界很硬的 React 项目：
+
+- `State` 负责定义数据
+- `Action` 是唯一允许修改 state 的地方
+- 组件通过 `useStore(selector)` 订阅
+
+如果你需要更宽的生态、更丰富的范式，可以直接用 `Zustand`、`Jotai` 或
+`Nano Stores`。`tinystore` 的目标不是变成全能型状态库，而是把一种明确模型
+做好。
+
 ## 特性
 
-- 惊人的re-render自动优化
-- 极其简单的API
-- 不到100行源代码
+- `State + Action` 双 class 模型
+- action 外部拿到的 state 永远是只读快照
+- `useStore(selector)` 支持按需订阅
+- `subscribe(...)` 支持非 React 场景接入
+- 支持异步 action 和函数式 `set`
 
 ## 安装
 
@@ -32,133 +47,201 @@ yarn add @cceevv/tinystore
 npm i @cceevv/tinystore
 ```
 
-## 使用
-
-### 1. 定义State
-
-`State`是一个不含方法的简单类，主要用于定义数据类型和结构。
+## 快速开始
 
 ```ts
-interface Point {
-  x: number;
-  y: number;
+import tinyStore, { Getter, Setter } from "@cceevv/tinystore";
+
+class CounterState {
+  count = 0;
+  label = "hello";
 }
 
-class DemoState {
-  label = "";
-  num = 0;
-  point: Point = {
-    x: 0,
-    y: 0,
-  };
-}
-```
-
-### 2. 定义Action
-
-`Action`是一个包含一系列用于改变状态的方法的类，状态只能在`Action`中被改变。
-
-```ts
-import type { Getter, Setter } from "@cceevv/tinystore";
-
-class DemoAction {
+class CounterAction {
   constructor(
-    // Constructor Shorthand
-    private get: Getter<DemoState>,
-    private set: Setter<DemoState>,
-  ) {
-    set({ label: "Hello Kitty." });
-  }
+    private get: Getter<CounterState>,
+    private set: Setter<CounterState>,
+  ) {}
 
   inc() {
-    const { num } = this.get();
-    this.set({ num: num + 1 });
+    this.set((prev) => ({ count: prev.count + 1 }));
   }
 
-  setPoint(x: number, y: number) {
-    this.set({ point: { x, y } });
-  }
-
-  private readonly names = ["Aaron", "Petter", "Charles"];
-
-  // async example
-  async randomName() {
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    this.set({ label: this.names[Math.random() * this.names.length | 0] });
+  setLabel(label: string) {
+    this.set({ label });
   }
 }
+
+export const counterStore = tinyStore(CounterState, CounterAction);
 ```
-
-### 3. 创建tinyStore
-
-建议步骤1~3放在一个文件内。
-
-```ts
-import tinyStore from "@cceevv/tinystore";
-
-export default tinyStore(DemoState, DemoAction);
-```
-
-### 4. 在组件中访问state和actions
 
 ```tsx
-import store from "path/to/store";
+import { counterStore } from "./store";
 
-const Demo = () => {
-  const { label, num, point } = store.useStore();
-  const { inc, setPoint, randomName } = store.actions();
+export function Counter() {
+  const count = counterStore.useStore((state) => state.count);
+  const label = counterStore.useStore((state) => state.label);
+  const { inc, setLabel } = counterStore.actions();
 
   return (
     <>
-      <p>
-        <label>num:</label>
-        <span>{num}</span>
-      </p>
+      <p>{label}</p>
+      <p>{count}</p>
       <button onClick={inc}>inc</button>
-
-      <p>
-        <label>point:</label>
-        <span>[{point.x}, {point.y}]</span>
-      </p>
-      <button onClick={() => setPoint(111, 222)}>setPoint</button>
-
-      <p>
-        <label>label:</label>
-        <span>{label}</span>
-      </p>
-      <button onClick={randomName}>randomName</button>
+      <button onClick={() => setLabel("updated")}>set label</button>
     </>
   );
-};
+}
+```
+
+## 核心思路
+
+### State 只定义数据
+
+`StateClass` 应该是一个只包含公开字段的简单类。
+
+```ts
+class ProfileState {
+  nickname = "";
+  age = 0;
+}
+```
+
+### Action 独占修改入口
+
+`ActionClass` 的构造函数会注入 `get` 和 `set`。所有 state 更新都应该通过
+`set` 完成。
+
+```ts
+class ProfileAction {
+  constructor(
+    private get: Getter<ProfileState>,
+    private set: Setter<ProfileState>,
+  ) {}
+
+  birthday() {
+    this.set((prev) => ({ age: prev.age + 1 }));
+  }
+}
+```
+
+### 组件默认用 selector 订阅
+
+优先使用 selector。无参 `useStore()` 表示订阅整个 state 快照。
+
+```tsx
+const age = profileStore.useStore((state) => state.age);
+const profile = profileStore.useStore();
 ```
 
 ## API
 
-### **tinyStore(StateClass, ActionClass)**
+### `tinyStore(StateClass, ActionClass)`
 
-- `StateClass`: 一个不含方法的简单类，主要用于定义数据类型和结构。
-- `ActionClass`: 一个包含一系列用于改变状态的方法的类。
-- returns: `{useStore, getStore, actions}` 详见下文解释。
+创建 store，返回：
 
-`` `StateClass`和`ActionClass`会被自动初始化，并在`ActionClass`的构造函数中注入`get`和`set`方法用于读写`State`，`State`只能通过`set()`方法在`Action`中被修改。 ``
+- `useStore`
+- `getStore`
+- `subscribe`
+- `actions`
 
-### **useStore()**
+### `useStore()`
 
-这是一个 React Hook，返回所有的状态，但只有在组件中使用的状态才会触发React渲染。
+返回完整的只读 state 快照。
 
-``注意：返回值是只读的，不可修改。如果传入参数`true`则返回源数据，可被修改，一般情况下不推荐！``
+```ts
+const state = store.useStore();
+```
 
-### **getStore()**
+### `useStore(selector, equalityFn?)`
 
-返回所有的状态，和`useStore()`的区别是，`getStore()`可以在任何地方被调用，而不仅仅在React组件中。
+返回选中的值，只有当 selector 结果变化时才 rerender。
 
-``注意：返回值是只读的，不可修改。如果传入参数`true`则返回源数据，可被修改，一般情况下不推荐！``
+```ts
+const count = store.useStore((state) => state.count);
+const listLength = store.useStore((state) => state.list.length, Object.is);
+```
 
-### **actions()**
+### `getStore()`
 
-返回所有用于改变`State`的方法，支持异步方法。
+返回当前只读 state 快照，可在 React 组件外使用。
 
-`` `get()`,`useStore()`,`getStore()`,`actions()`的返回值都是只读的，不能被修改！ ``
+```ts
+const snapshot = store.getStore();
+```
+
+### `subscribe(listener)`
+
+订阅完整 state，listener 会收到 `(next, prev)`。
+
+```ts
+const unsubscribe = store.subscribe((next, prev) => {
+  console.log(next, prev);
+});
+```
+
+### `subscribe(selector, listener, equalityFn?)`
+
+在 React 之外订阅某个选中值。
+
+```ts
+const unsubscribe = store.subscribe(
+  (state) => state.count,
+  (next, prev) => {
+    console.log(next, prev);
+  },
+);
+```
+
+### `actions()`
+
+返回只读 action map。
+
+```ts
+const { inc } = store.actions();
+```
+
+## 设计约束
+
+- action 外部拿到的 state 永远是只读快照。
+- 更新嵌套对象时，应当使用不可变替换。
+- `tinystore` 是 React-first，不是跨框架 core。
+- `tinystore` 不是深层 proxy 响应式系统。
+
+## 对比
+
+| 库 | 核心模型 | 修改边界 | 精细订阅 | 跨框架 |
+| --- | --- | --- | --- | --- |
+| tinystore | `State + Action` classes | 显式 action | 支持 | 否 |
+| Zustand | function store | 约定式 | 支持 | 否 |
+| Jotai | atoms | atom write | 支持 | 否 |
+| Nano Stores | atoms/stores | store API | 支持 | 是 |
+
+## 从 v1 迁移
+
+- 删除了 `useStore(true)`
+- 删除了 `getStore(true)`
+- 推荐使用 `useStore(selector)` 作为主订阅方式
+- state 快照现在始终只读
+
+## FAQ
+
+### 为什么用 class
+
+因为这样能把数据结构和修改入口分开，代码评审时更容易扫清状态边界。
+
+### 为什么不能直接改 state
+
+因为 `tinystore` 把“显式 action 修改”当成核心约束，而不是可选习惯。
+
+### tinystore 是不是只能给 React 用
+
+公开 API 是 React-first，但同时提供 `getStore()` 和 `subscribe()` 支持
+非 React 集成。
+
+### 它和 Zustand 的主要区别是什么
+
+`tinystore` 用更窄的模型，换更强的修改边界和更统一的团队约束。
 
 ## License
 

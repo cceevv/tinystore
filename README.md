@@ -1,8 +1,8 @@
 <div align="center">
 <h1>tinystore</h1>
 
-Tiny state manager based on React Hooks, with automatic performance
-optimization.
+A tiny React state manager with explicit actions, readonly state, and selective
+subscriptions.
 
 [![npm](https://img.shields.io/npm/v/@cceevv/tinystore?style=flat-square)](https://www.npmjs.com/package/@cceevv/tinystore)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/cceevv/tinystore/test.yml?branch=master&style=flat-square&label=CI&logo=github)](https://github.com/cceevv/tinystore/actions/workflows/test.yml)
@@ -17,11 +17,26 @@ English · [简体中文](./README.zh-CN.md)
 
 ---
 
+## Why tinystore
+
+`tinystore` is a React-first store for teams that want a tiny API surface and a
+hard mutation boundary:
+
+- `State` defines data
+- `Action` is the only place allowed to update state
+- components subscribe with `useStore(selector)`
+
+If you want a wide ecosystem or multiple store paradigms, use `Zustand`,
+`Jotai`, or `Nano Stores`. If you want one small, explicit model, `tinystore`
+is the point.
+
 ## Features
 
-- Amazing re-render auto-optimization
-- Extremely simple API
-- Less than 100 lines of source code
+- Class-based `State + Action` model
+- Readonly state snapshots outside actions
+- `useStore(selector)` for selective subscriptions
+- `subscribe(...)` for non-React integrations
+- Async actions and function-style updates
 
 ## Install
 
@@ -33,140 +48,206 @@ yarn add @cceevv/tinystore
 npm i @cceevv/tinystore
 ```
 
-## Usage
-
-### 1. State definition
-
-`State` is a simple class with no methods, mainly used to define data types and
-structures.
+## Quick start
 
 ```ts
-interface Point {
-  x: number;
-  y: number;
+import tinyStore, { Getter, Setter } from "@cceevv/tinystore";
+
+class CounterState {
+  count = 0;
+  label = "hello";
 }
 
-class DemoState {
-  label = "";
-  num = 0;
-  point: Point = {
-    x: 0,
-    y: 0,
-  };
-}
-```
-
-### 2. Action definition
-
-`Action` is a class that contains a series of methods for changing the `State`,
-and the state can only be changed in `Action`.
-
-```ts
-import type { Getter, Setter } from "@cceevv/tinystore";
-
-class DemoAction {
+class CounterAction {
   constructor(
-    // Constructor Shorthand
-    private get: Getter<DemoState>,
-    private set: Setter<DemoState>,
-  ) {
-    set({ label: "Hello Kitty." });
-  }
+    private get: Getter<CounterState>,
+    private set: Setter<CounterState>,
+  ) {}
 
   inc() {
-    const { num } = this.get();
-    this.set({ num: num + 1 });
+    this.set((prev) => ({ count: prev.count + 1 }));
   }
 
-  setPoint(x: number, y: number) {
-    this.set({ point: { x, y } });
-  }
-
-  private readonly names = ["Aaron", "Petter", "Charles"];
-
-  // async example
-  async randomName() {
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    this.set({ label: this.names[Math.random() * this.names.length | 0] });
+  setLabel(label: string) {
+    this.set({ label });
   }
 }
+
+export const counterStore = tinyStore(CounterState, CounterAction);
 ```
-
-### 3. tinyStore initialization
-
-It is recommended that steps 1~3 be placed in one file.
-
-```ts
-import tinyStore from "@cceevv/tinystore";
-
-export default tinyStore(DemoState, DemoAction);
-```
-
-### 4. Access state and actions in components
 
 ```tsx
-import store from "path/to/store";
+import { counterStore } from "./store";
 
-const Demo = () => {
-  const { label, num, point } = store.useStore();
-  const { inc, setPoint, randomName } = store.actions();
+export function Counter() {
+  const count = counterStore.useStore((state) => state.count);
+  const label = counterStore.useStore((state) => state.label);
+  const { inc, setLabel } = counterStore.actions();
 
   return (
     <>
-      <p>
-        <label>num:</label>
-        <span>{num}</span>
-      </p>
+      <p>{label}</p>
+      <p>{count}</p>
       <button onClick={inc}>inc</button>
-
-      <p>
-        <label>point:</label>
-        <span>[{point.x}, {point.y}]</span>
-      </p>
-      <button onClick={() => setPoint(111, 222)}>setPoint</button>
-
-      <p>
-        <label>label:</label>
-        <span>{label}</span>
-      </p>
-      <button onClick={randomName}>randomName</button>
+      <button onClick={() => setLabel("updated")}>set label</button>
     </>
   );
-};
+}
+```
+
+## Core ideas
+
+### State defines data
+
+`StateClass` should be a simple class with public fields.
+
+```ts
+class ProfileState {
+  nickname = "";
+  age = 0;
+}
+```
+
+### Action owns mutations
+
+`ActionClass` receives `get` and `set` in its constructor. State updates should
+go through `set`.
+
+```ts
+class ProfileAction {
+  constructor(
+    private get: Getter<ProfileState>,
+    private set: Setter<ProfileState>,
+  ) {}
+
+  birthday() {
+    this.set((prev) => ({ age: prev.age + 1 }));
+  }
+}
+```
+
+### Components subscribe with selectors
+
+Use selectors by default. `useStore()` without arguments subscribes to the whole
+state snapshot.
+
+```tsx
+const age = profileStore.useStore((state) => state.age);
+const profile = profileStore.useStore();
 ```
 
 ## API
 
-### **tinyStore(StateClass, ActionClass)**
+### `tinyStore(StateClass, ActionClass)`
 
-- `StateClass`: A simple class without methods, mainly used to define data types
-  and structures.
-- `ActionClass`: A class that contains a set of methods for changing the
-  `State`.
-- returns: `{useStore, getStore, actions}` See the explanation below for
-  details.
+Creates a store and returns:
 
-`` `StateClass` and `ActionClass` will be automatically initialized, and `get` and `set` methods will be injected into the constructor of `ActionClass` to read and write `State`, `State` can only be modified in `Action` through `set()` method. ``
+- `useStore`
+- `getStore`
+- `subscribe`
+- `actions`
 
-### **useStore()**
+### `useStore()`
 
-This is a React Hook that returns all state, but only the state that is used in
-the component will trigger a React render.
+Returns the full readonly state snapshot.
 
-``Note: The return value is read-only and cannot be modified. If the parameter `true` is passed in, the source data will be returned, which can be modified, and it is generally not recommended!``
+```ts
+const state = store.useStore();
+```
 
-### **getStore()**
+### `useStore(selector, equalityFn?)`
 
-Returns all state. The difference from `useStore()` is that `getStore()` can be
-called anywhere, not just in React components.
+Returns the selected value and only rerenders when the selected result changes.
 
-``Note: The return value is read-only and cannot be modified. If the parameter `true` is passed in, the source data will be returned, which can be modified, and it is generally not recommended!``
+```ts
+const count = store.useStore((state) => state.count);
+const listLength = store.useStore((state) => state.list.length, Object.is);
+```
 
-### **actions()**
+### `getStore()`
 
-Returns all methods used to change `State`, supports asynchronous methods.
+Returns the current readonly state snapshot. It can be used outside React
+components.
 
-``The return values of `get()`, `useStore()`, `getStore()`, `actions()` are all read-only, which means it cannot be modified!``
+```ts
+const snapshot = store.getStore();
+```
+
+### `subscribe(listener)`
+
+Subscribes to the full state. The listener receives `(next, prev)`.
+
+```ts
+const unsubscribe = store.subscribe((next, prev) => {
+  console.log(next, prev);
+});
+```
+
+### `subscribe(selector, listener, equalityFn?)`
+
+Subscribes to a selected value outside React.
+
+```ts
+const unsubscribe = store.subscribe(
+  (state) => state.count,
+  (next, prev) => {
+    console.log(next, prev);
+  },
+);
+```
+
+### `actions()`
+
+Returns the readonly action map.
+
+```ts
+const { inc } = store.actions();
+```
+
+## Design constraints
+
+- State snapshots are readonly outside actions.
+- Nested objects should be replaced immutably when updated.
+- `tinystore` is React-first, not a cross-framework store core.
+- `tinystore` is not a deep reactive proxy system.
+
+## Comparison
+
+| Library | Primary model | Mutation boundary | Selective subscriptions | Cross-framework |
+| --- | --- | --- | --- | --- |
+| tinystore | `State + Action` classes | Explicit actions | Yes | No |
+| Zustand | Function store | Convention-based | Yes | No |
+| Jotai | Atoms | Atom writes | Yes | No |
+| Nano Stores | Atoms/stores | Store APIs | Yes | Yes |
+
+## Migration from v1
+
+- `useStore(true)` was removed.
+- `getStore(true)` was removed.
+- `useStore(selector)` is now the recommended subscription API.
+- State snapshots are always readonly.
+
+## FAQ
+
+### Why classes?
+
+To keep state structure and mutation entry points explicit and easy to scan in
+code review.
+
+### Why can't I mutate state directly?
+
+Because `tinystore` treats explicit actions as a core design constraint, not an
+optional pattern.
+
+### Is tinystore React-only?
+
+The public API is React-first. It also exposes `getStore()` and `subscribe()`
+for non-React integrations.
+
+### How is it different from Zustand?
+
+`tinystore` trades ecosystem breadth for a narrower model with harder mutation
+boundaries.
 
 ## License
 

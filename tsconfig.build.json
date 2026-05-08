@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/index.ts", "rollup.config.ts"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}

@@ -15,9 +15,11 @@
     "strictPropertyInitialization": true,
 
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    "types": ["node", "vitest/globals"],
 
+    "rootDir": ".",
     "outDir": "dist",
 
     "allowSyntheticDefaultImports": true,
@@ -26,7 +28,8 @@
     "isolatedModules": true,
 
     "jsx": "react-jsx",
-    "target": "es6"
+    "target": "es2021",
+    "lib": ["es2021", "dom"]
   },
   "exclude": ["node_modules", "dist", "coverage"]
 }
