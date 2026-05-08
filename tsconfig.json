@@ -16,6 +16,7 @@
 
     "module": "esnext",
     "moduleResolution": "bundler",
+    "ignoreDeprecations": "6.0",
     "resolveJsonModule": true,
     "types": ["node", "vitest/globals"],
 
