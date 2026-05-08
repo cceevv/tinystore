@@ -27,8 +27,8 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
-          cache: pnpm
       - run: corepack enable
+      - run: corepack prepare pnpm@10.13.1 --activate
       - run: pnpm --version
       - run: pnpm install --frozen-lockfile
       - run: pnpm run typecheck
