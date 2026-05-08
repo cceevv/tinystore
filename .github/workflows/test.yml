@@ -27,12 +27,12 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
-      - run: corepack enable
-      - run: corepack pnpm --version
-      - run: corepack pnpm install --frozen-lockfile
-      - run: corepack pnpm run typecheck
-      - run: corepack pnpm run build
-      - run: corepack pnpm test
+      - run: npm install -g pnpm@10.13.1
+      - run: pnpm --version
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm run build
+      - run: pnpm test
 
       - name: Coveralls Parallel
         if: matrix.os == 'ubuntu-latest'
