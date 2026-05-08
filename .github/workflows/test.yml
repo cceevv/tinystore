@@ -23,16 +23,21 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
           package-manager-cache: false
-      - run: npx -y pnpm@10.13.1 --version
-      - run: npx -y pnpm@10.13.1 install --frozen-lockfile
-      - run: npx -y pnpm@10.13.1 run typecheck
-      - run: npx -y pnpm@10.13.1 run build
-      - run: npx -y pnpm@10.13.1 test
+      - run: pnpm --version
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm run build
+      - run: pnpm test
 
       - name: Coveralls Parallel
         if: matrix.os == 'ubuntu-latest'
