@@ -15,7 +15,7 @@ jobs:
   test:
     strategy:
       matrix:
-        node-version: [22.x, 24.x]
+        node-version: ['22.18.0', '24.x']
         os: [ubuntu-latest, macos-latest]
 
     runs-on: ${{ matrix.os }}
@@ -23,17 +23,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.13.1
-
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
           cache: pnpm
-      - run: pnpm install
+      - run: corepack enable
+      - run: pnpm --version
+      - run: pnpm install --frozen-lockfile
       - run: pnpm run typecheck
       - run: pnpm run build
       - run: pnpm test

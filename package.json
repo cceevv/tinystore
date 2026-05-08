@@ -14,6 +14,7 @@
   ],
   "license": "MIT",
   "author": "cceevv <cceevv@163.com> (https://github.com/cceevv)",
+  "packageManager": "pnpm@10.13.1",
   "homepage": "https://github.com/cceevv/tinystore",
   "repository": "github:cceevv/tinystore",
   "bugs": "https://github.com/cceevv/tinystore/issues",
