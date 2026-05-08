@@ -1,6 +1,6 @@
 {
   "name": "@cceevv/tinystore",
-  "version": "2.0.0-beta.1",
+  "version": "2.0.0",
   "description": "Tiny React state manager with explicit actions, readonly state, and selective subscriptions.",
   "keywords": [
     "react",
