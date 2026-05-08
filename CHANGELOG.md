@@ -17,5 +17,5 @@
 - Upgraded React, TypeScript, build tooling, and test dependencies.
 - Added dedicated build and test TypeScript configs for TypeScript 6 compatibility.
 - Migrated tests from Jest to Vitest.
-- Migrated builds from Rollup to tsdown.
+- Migrated builds from Rollup to tsup.
 - Switched CI to `pnpm` and expanded validation to `typecheck`, `build`, and `test`.

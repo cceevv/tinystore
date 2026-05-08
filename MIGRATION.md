@@ -70,4 +70,4 @@ The v2 beta workspace uses:
 
 - `pnpm` for package management
 - `Vitest` for tests
-- `tsdown` for builds
+- `tsup` for builds
