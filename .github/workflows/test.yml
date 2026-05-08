@@ -23,21 +23,22 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.13.1
-
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
           package-manager-cache: false
-      - run: pnpm --version
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run typecheck
-      - run: pnpm run build
-      - run: pnpm test
+      - name: Install and validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@10.13.1 --activate
+          pnpm --version
+          pnpm install --frozen-lockfile
+          pnpm run typecheck
+          pnpm run build
+          pnpm test
       - name: Check lcov output
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.18.0'
         shell: bash
